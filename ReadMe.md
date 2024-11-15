@@ -83,7 +83,7 @@ IWD needs to manage network configuration for Enterprise connections.
     As we can see, it shows the network which is available.
 
 3. Next we shall create a predefined configuration file for this SSID:
-    - Navigate to the IWD network configuration directory and create a file named <SSID>.8021x (replace <SSID> with your network name). `iiscwlan.8021x` in my case:
+    - Navigate to the IWD network configuration directory and create a file named `<SSID>.8021x` (replace `<SSID>` with your network name). `iiscwlan.8021x` in my case:
         ```
         $ sudo cat /var/lib/iwd/iiscwlan.8021x
 
