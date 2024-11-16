@@ -141,49 +141,41 @@ IWD needs to manage network configuration for Enterprise connections.
     ```
 ### The AX200 has some issue with power management, so it gives best performance when power management option is turned off.
 
-#### Create a Systemd Service
-1. Create a custom systemd service to disable power management:
+#### Create a post script which gets triggered whenever `iwd` starts
+1. Create a drop-in directory for IWD:
     ```
-    sudo nano /etc/systemd/system/disable-wifi-power-save.service
-    ```
-2.  Add the following content:
-    ```
-    [Unit]
-    Description=Disable Wi-Fi Power Management
-    After=network.target iwd.service
-    Requires=iwd.service
-
-    [Service]
-    Type=oneshot
-    ExecStart=/sbin/iw wlan0 set power_save off
-
-    [Install]
-    WantedBy=multi-user.target
+	sudo mkdir -p /etc/systemd/system/iwd.service.d
 
     ```
-    Note:
-    - After=network.target: Ensures the service starts after the basic network stack is initialized.
-    - After=iwd.service: Ensures the service starts after the IWD daemon is ready.
-    - Use them based on whether your service relies on the generic network stack (network.target) or specifically on IWD (iwd.service).
-3. Reload systemd to recognize the new service:
+2. Create or edit the drop-in file:
+   ```
+	sudo nano /etc/systemd/system/iwd.service.d/post-power-save.conf
+   ```
+3. Add the following content:
+   ```
+	[Service]
+	ExecStartPost=/sbin/iw wlan0 set power_save off
+   ```
+   - ExecStartPost ensures the command is executed immediately after IWD starts.
+   - Replace /sbin/iw with the correct path to the iw binary if it differs on your system (check with which iw).
+4. Save the file and reload systemd:
     ```
     sudo systemctl daemon-reload
     ```
-4. Enable and start the service:
-    ```
-    sudo systemctl enable disable-wifi-power-save.service
-    sudo systemctl start disable-wifi-power-save.service
-    ```
-5. Verify that power management is disabled:
+    - Restart the IWD service:
+        ```
+            sudo systemctl restart iwd
+        ```
+    - Verify that power management is disabled:
+        ```
+        $ iwconfig wlan0
+        wlan0     IEEE 802.11  ESSID:"iiscwlan"  
+                Mode:Managed  Frequency:5.22 GHz  Access Point: 88:B1:E1:AB:F7:A0   
+                Bit Rate=52 Mb/s   Tx-Power=22 dBm   
+                Retry short limit:7   RTS thr:off   Fragment thr:off
+                Power Management:off
+                Link Quality=59/70  Signal level=-51 dBm  
+                Rx invalid nwid:0  Rx invalid crypt:0  Rx invalid frag:0
+                Tx excessive retries:0  Invalid misc:2896   Missed beacon:0
+        ```
 
-    ```
-    $ iwconfig wlan0
-    wlan0     IEEE 802.11  ESSID:"iiscwlan"  
-            Mode:Managed  Frequency:5.2 GHz  Access Point: 88:B1:E1:AB:F7:A0   
-            Bit Rate=156 Mb/s   Tx-Power=22 dBm   
-            Retry short limit:7   RTS thr:off   Fragment thr:off
-            Power Management:off
-            Link Quality=57/70  Signal level=-53 dBm  
-            Rx invalid nwid:0  Rx invalid crypt:0  Rx invalid frag:0
-            Tx excessive retries:0  Invalid misc:2135   Missed beacon:0
-    ```
